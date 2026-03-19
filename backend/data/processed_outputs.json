@@ -103,11 +103,11 @@
               "esg_score": 75,
               "preferred_supplier": false,
               "is_restricted": false,
-              "restriction_reason": NaN,
+              "restriction_reason": null,
               "contract_status": "active",
               "data_residency_supported": true,
               "capacity_per_month": 1500,
-              "notes": NaN
+              "notes": null
             },
             "selected_pricing_row": null
           },
@@ -129,11 +129,11 @@
               "esg_score": 76,
               "preferred_supplier": false,
               "is_restricted": false,
-              "restriction_reason": NaN,
+              "restriction_reason": null,
               "contract_status": "active",
               "data_residency_supported": true,
               "capacity_per_month": 4200,
-              "notes": NaN
+              "notes": null
             },
             "selected_pricing_row": null
           }
@@ -177,27 +177,34 @@
     },
     {
       "output_id": 2,
-      "request_id": "REQ-000001",
-      "processed_at": "2026-03-19T18:36:12.783481Z",
+      "request_id": "REQ-000004",
+      "processed_at": "2026-03-19T20:07:33.210393Z",
       "final_output": {
-        "request_id": "REQ-000001",
+        "request_id": "REQ-000004",
         "request_interpretation": {
-          "category_l1": "Professional Services",
-          "category_l2": "IT Project Management Services",
-          "quantity": 400,
-          "budget_amount": 400000,
+          "category_l1": "IT",
+          "category_l2": "Docking Stations",
+          "quantity": 240,
+          "budget_amount": 25199.55,
           "currency": "EUR",
-          "delivery_country": "ES",
-          "required_by_date": "2026-05-17",
-          "days_until_required": 32,
-          "preferred_supplier_stated": "Accenture Advisory Europe",
-          "incumbent_supplier": "Accenture Advisory Europe"
+          "delivery_country": "DE",
+          "required_by_date": "2026-03-20",
+          "days_until_required": 5,
+          "preferred_supplier_stated": "Dell Enterprise Europe",
+          "incumbent_supplier": "Bechtle Workplace Solutions"
         },
         "validation": {
           "completeness": "pass",
           "issues_detected": [
             {
               "issue_id": "V-001",
+              "severity": "high",
+              "type": "lead_time_infeasible",
+              "description": "Supplier set contains blocking operational issue: lead_time_infeasible.",
+              "action_required": "Resolve or override issue: lead_time_infeasible."
+            },
+            {
+              "issue_id": "V-002",
               "severity": "high",
               "type": "budget_insufficient",
               "description": "Supplier set contains blocking operational issue: budget_insufficient.",
@@ -207,7 +214,7 @@
         },
         "policy_evaluation": {
           "approval_threshold": {
-            "rule_applied": "AT-003",
+            "rule_applied": "AT-002",
             "basis": null,
             "quotes_required": null,
             "approvers": null,
@@ -215,7 +222,7 @@
             "note": null
           },
           "preferred_supplier": {
-            "supplier": "Accenture Advisory Europe",
+            "supplier": "Dell Enterprise Europe",
             "status": "eligible",
             "is_preferred": true,
             "covers_delivery_country": true,
@@ -223,11 +230,19 @@
             "policy_note": null
           },
           "restricted_suppliers": {
-            "SUP-0030_Accenture_Advisory_Europe": {
+            "SUP-0001_Dell_Enterprise_Europe": {
               "restricted": false,
               "note": "Supplier evaluated in final candidate set."
             },
-            "SUP-0031_Capgemini_Consulting": {
+            "SUP-0002_HP_Enterprise_Devices": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            },
+            "SUP-0007_Bechtle_Workplace_Solutions": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            },
+            "SUP-0008_Computacenter_Devices": {
               "restricted": false,
               "note": "Supplier evaluated in final candidate set."
             }
@@ -238,108 +253,86 @@
         "supplier_shortlist": [
           {
             "rank": 1,
-            "supplier_id": "SUP-0030",
-            "supplier_name": "Accenture Advisory Europe",
-            "score": 0.2864,
-            "unit_price": 1120.0,
-            "quality_score": 90,
-            "risk_score": 25,
-            "esg_score": 66,
+            "supplier_id": "SUP-0001",
+            "supplier_name": "Dell Enterprise Europe",
+            "score": 0.3006,
+            "unit_price": 155.0,
+            "quality_score": 85,
+            "risk_score": 15,
+            "esg_score": 73,
             "award_block": true
           },
           {
             "rank": 2,
-            "supplier_id": "SUP-0031",
-            "supplier_name": "Capgemini Consulting",
-            "score": 0.2834,
-            "unit_price": 1030.0,
-            "quality_score": 86,
-            "risk_score": 22,
-            "esg_score": 69,
+            "supplier_id": "SUP-0007",
+            "supplier_name": "Bechtle Workplace Solutions",
+            "score": 0.2827,
+            "unit_price": 148.8,
+            "quality_score": 82,
+            "risk_score": 19,
+            "esg_score": 72,
+            "award_block": true
+          },
+          {
+            "rank": 3,
+            "supplier_id": "SUP-0002",
+            "supplier_name": "HP Enterprise Devices",
+            "score": 0.2656,
+            "unit_price": 153.45,
+            "quality_score": 83,
+            "risk_score": 26,
+            "esg_score": 66,
             "award_block": true
           }
         ],
         "suppliers_excluded": [
           {
-            "supplier_id": "SUP-0033",
-            "supplier_name": "Deloitte Technology Advisory",
+            "supplier_id": "SUP-0009",
+            "supplier_name": "Insight Technology Group",
             "reason": "country_coverage_mismatch",
             "supplier": {
-              "supplier_id": "SUP-0033",
-              "supplier_name": "Deloitte Technology Advisory",
-              "category_l1": "Professional Services",
-              "category_l2": "IT Project Management Services",
-              "country_hq": "CH",
-              "service_regions": "CH;DE;FR;AT;IT",
-              "currency": "CHF",
-              "pricing_model": "day_rate",
-              "quality_score": 86,
-              "risk_score": 27,
-              "esg_score": 75,
-              "preferred_supplier": false,
-              "is_restricted": false,
-              "restriction_reason": NaN,
-              "contract_status": "active",
-              "data_residency_supported": true,
-              "capacity_per_month": 1500,
-              "notes": NaN
-            },
-            "selected_pricing_row": null
-          },
-          {
-            "supplier_id": "SUP-0039",
-            "supplier_name": "Infosys Consulting",
-            "reason": "country_coverage_mismatch",
-            "supplier": {
-              "supplier_id": "SUP-0039",
-              "supplier_name": "Infosys Consulting",
-              "category_l1": "Professional Services",
-              "category_l2": "IT Project Management Services",
-              "country_hq": "IN",
-              "service_regions": "US;CA;AU;SG;IN;JP;UAE;BR;MX;ZA",
+              "supplier_id": "SUP-0009",
+              "supplier_name": "Insight Technology Group",
+              "category_l1": "IT",
+              "category_l2": "Docking Stations",
+              "country_hq": "US",
+              "service_regions": "US;CA;AU;SG;JP",
               "currency": "USD",
-              "pricing_model": "day_rate",
-              "quality_score": 84,
+              "pricing_model": "tiered",
+              "quality_score": 83,
               "risk_score": 19,
-              "esg_score": 76,
+              "esg_score": 71,
               "preferred_supplier": false,
               "is_restricted": false,
-              "restriction_reason": NaN,
+              "restriction_reason": null,
               "contract_status": "active",
               "data_residency_supported": true,
-              "capacity_per_month": 4200,
-              "notes": NaN
+              "capacity_per_month": 9500,
+              "notes": null
             },
             "selected_pricing_row": null
           }
         ],
-        "escalations": [
-          {
-            "rule_id": "AT-003",
-            "trigger": "insufficient_comparison",
-            "action": "escalate",
-            "target": "Head of Category",
-            "blocking": true,
-            "supplier_id": null
-          }
-        ],
+        "escalations": [],
         "recommendation": {
           "status": "cannot_auto_award_but_options_exist",
-          "recommended_supplier": "Accenture Advisory Europe"
+          "recommended_supplier": "Dell Enterprise Europe"
         },
         "audit_trail": {
           "policies_checked": [
-            "AT-003",
-            "PS-SUP-0030-IT Project Management Services",
-            "PS-SUP-0031-IT Project Management Services"
+            "AT-002",
+            "PS-SUP-0001-Docking Stations",
+            "PS-SUP-0002-Docking Stations",
+            "PS-SUP-0007-Docking Stations"
           ],
           "supplier_ids_evaluated": [
-            "SUP-0030",
-            "SUP-0031",
-            "SUP-0033",
-            "SUP-0039"
+            "SUP-0001",
+            "SUP-0002",
+            "SUP-0007",
+            "SUP-0008",
+            "SUP-0009"
           ],
-          "pricing_tiers_applied": "180–9999 units (EU region, EUR currency)",
+          "pricing_tiers_applied": "100–499 units (EU region, EUR currency)",
           "data_sources_used": [
             "suppliers.csv",
             "pricing.csv",

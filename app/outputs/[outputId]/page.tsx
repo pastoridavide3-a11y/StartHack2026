@@ -79,12 +79,16 @@ export default function OutputDetailPage() {
   const requestInterpretation = finalOutput?.request_interpretation ?? {}
   const validation = finalOutput?.validation ?? {}
   const policyEvaluation = finalOutput?.policy_evaluation ?? {}
-  const supplierShortlist = finalOutput?.supplier_shortlist ?? []
-  const suppliersExcluded = finalOutput?.suppliers_excluded ?? []
-  const escalations = finalOutput?.escalations ?? []
+  const supplierShortlist = Array.isArray(finalOutput?.supplier_shortlist)
+    ? finalOutput.supplier_shortlist
+    : []
+  const suppliersExcluded = Array.isArray(finalOutput?.suppliers_excluded)
+    ? finalOutput.suppliers_excluded
+    : []
+  const escalations = Array.isArray(finalOutput?.escalations) ? finalOutput.escalations : []
   const auditTrail = finalOutput?.audit_trail ?? {}
 
-  const issuesDetected = validation?.issues_detected ?? []
+  const issuesDetected = Array.isArray(validation?.issues_detected) ? validation.issues_detected : []
   const categoryRulesApplied: AnyRecord[] = Array.isArray(policyEvaluation?.category_rules_applied)
     ? policyEvaluation.category_rules_applied
     : []
@@ -179,10 +183,10 @@ export default function OutputDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Request interpretation */}
+            {/* Request summary */}
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-base">Request interpretation</CardTitle>
+                <CardTitle className="text-base">Request summary</CardTitle>
                 <CardDescription>Normalized inputs used by the pipeline.</CardDescription>
               </CardHeader>
               <CardContent>
@@ -400,7 +404,7 @@ export default function OutputDetailPage() {
             {/* Supplier shortlist */}
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-base">Supplier shortlist</CardTitle>
+                <CardTitle className="text-base">Shortlisted suppliers</CardTitle>
                 <CardDescription>Top-ranked eligible suppliers.</CardDescription>
               </CardHeader>
               <CardContent>
@@ -449,35 +453,66 @@ export default function OutputDetailPage() {
             {/* Suppliers excluded */}
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-base">Suppliers excluded</CardTitle>
-                <CardDescription>Why suppliers were removed from the shortlist.</CardDescription>
+                <CardTitle className="text-base">Excluded suppliers</CardTitle>
+                <CardDescription>Suppliers evaluated but removed from the shortlist.</CardDescription>
               </CardHeader>
               <CardContent>
                 {(suppliersExcluded as AnyRecord[]).length === 0 ? (
-                  <div className="text-muted-foreground text-sm">No suppliers excluded.</div>
+                  <div className="text-muted-foreground text-sm">No excluded suppliers.</div>
                 ) : (
-                  <div className="space-y-3">
-                    {(suppliersExcluded as AnyRecord[]).map((ex) => (
-                      <details
-                        key={String(ex.supplier_id ?? ex.supplier_name ?? Math.random())}
-                        className="rounded-md border border-border bg-background p-3"
-                      >
-                        <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
-                          <div className="text-sm font-medium">
-                            {ex.supplier_name ?? "-"}{" "}
-                            <span className="text-xs text-muted-foreground">({ex.supplier_id ?? "-"})</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Reason: {ex.reason ?? "-"}
-                          </div>
-                        </summary>
-                        <div className="mt-3 text-xs text-muted-foreground">
-                          <pre className="whitespace-pre-wrap overflow-auto">
-                            {JSON.stringify(ex, null, 2)}
-                          </pre>
-                        </div>
-                      </details>
-                    ))}
+                  <div className="border border-border rounded-md overflow-x-auto">
+                    <table className="min-w-full text-xs md:text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Supplier ID</th>
+                          <th className="px-3 py-2 text-left">Supplier</th>
+                          <th className="px-3 py-2 text-left">Reason</th>
+                          <th className="px-3 py-2 text-right">Quality</th>
+                          <th className="px-3 py-2 text-right">Risk</th>
+                          <th className="px-3 py-2 text-right">ESG</th>
+                          <th className="px-3 py-2 text-left">Currency</th>
+                          <th className="px-3 py-2 text-left">Pricing model</th>
+                          <th className="px-3 py-2 text-left">Capacity / month</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(suppliersExcluded as AnyRecord[]).map((ex) => {
+                          const supplier =
+                            ex?.supplier && typeof ex.supplier === "object" ? (ex.supplier as AnyRecord) : ({} as AnyRecord)
+                          const supplierId =
+                            supplier?.supplier_id ?? ex?.supplier_id ?? "-"
+                          const supplierName =
+                            supplier?.supplier_name ?? ex?.supplier_name ?? "-"
+
+                          return (
+                            <tr
+                              key={`${String(supplierId)}-${String(ex?.reason ?? "")}`}
+                              className="border-t border-border align-top"
+                            >
+                              <td className="px-3 py-2">{supplierId}</td>
+                              <td className="px-3 py-2">{supplierName}</td>
+                              <td className="px-3 py-2">{ex?.reason ?? "-"}</td>
+                              <td className="px-3 py-2 text-right">
+                                {supplier?.quality_score ?? ex?.quality_score ?? "-"}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {supplier?.risk_score ?? ex?.risk_score ?? "-"}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {supplier?.esg_score ?? ex?.esg_score ?? "-"}
+                              </td>
+                              <td className="px-3 py-2">{supplier?.currency ?? ex?.currency ?? "-"}</td>
+                              <td className="px-3 py-2">
+                                {supplier?.pricing_model ?? ex?.pricing_model ?? "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {supplier?.capacity_per_month ?? ex?.capacity_per_month ?? "-"}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </CardContent>
@@ -566,8 +601,8 @@ export default function OutputDetailPage() {
             {/* Raw JSON toggle */}
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-base">Debug</CardTitle>
-                <CardDescription>Optional raw output for troubleshooting.</CardDescription>
+                <CardTitle className="text-base">Raw JSON</CardTitle>
+                <CardDescription>Optional full stored JSON for troubleshooting.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between gap-3">

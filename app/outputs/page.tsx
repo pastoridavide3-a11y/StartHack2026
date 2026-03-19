@@ -5,9 +5,21 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 import { AppShell } from "@/components/app-shell"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table2, ArrowLeft } from "lucide-react"
+import { Table2, ArrowLeft, Trash2 } from "lucide-react"
 
 const BACKEND_BASE_URL = "http://127.0.0.1:8010"
 
@@ -20,6 +32,13 @@ interface ProcessedOutputRecord {
       status?: string
       recommended_supplier?: string
     }
+    request_interpretation?: {
+      category_l1?: string
+      category_l2?: string
+      quantity?: number | string | null
+      budget_amount?: number | string | null
+      currency?: string | null
+    }
   }
 }
 
@@ -28,30 +47,49 @@ export default function OutputsListPage() {
   const [outputs, setOutputs] = useState<ProcessedOutputRecord[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [deletingOutputId, setDeletingOutputId] = useState<number | null>(null)
+
+  function formatDateTime(iso: string | undefined | null): string {
+    if (!iso) return "-"
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleString()
+  }
+
+  async function fetchOutputs() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/processed-outputs`)
+      if (!res.ok) throw new Error(`Failed to load outputs (${res.status})`)
+      const json = (await res.json()) as ProcessedOutputRecord[]
+      setOutputs(json)
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to load outputs")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      setLoadError(null)
-      try {
-        const res = await fetch(`${BACKEND_BASE_URL}/processed-outputs`)
-        if (!res.ok) throw new Error(`Failed to load outputs (${res.status})`)
-        const json = (await res.json()) as ProcessedOutputRecord[]
-        if (!cancelled) setOutputs(json)
-      } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Failed to load outputs")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
+    fetchOutputs()
   }, [])
 
   const rows = useMemo(() => outputs, [outputs])
+
+  async function handleDelete(outputId: number) {
+    setDeletingOutputId(outputId)
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/processed-outputs/${outputId}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) throw new Error(`Failed to delete output (${res.status})`)
+      await fetchOutputs()
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to delete output")
+    } finally {
+      setDeletingOutputId(null)
+    }
+  }
 
   return (
     <AppShell>
@@ -92,18 +130,20 @@ export default function OutputsListPage() {
                 <table className="min-w-full text-xs md:text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="px-3 py-2 text-left">Output ID</th>
-                      <th className="px-3 py-2 text-left">Request ID</th>
-                      <th className="px-3 py-2 text-left">Processed at</th>
-                      <th className="px-3 py-2 text-left">Recommendation status</th>
-                      <th className="px-3 py-2 text-left">Recommended supplier</th>
+                      <th className="px-3 py-2 text-left">output_id</th>
+                      <th className="px-3 py-2 text-left">request_id</th>
+                      <th className="px-3 py-2 text-left">processed_at</th>
+                      <th className="px-3 py-2 text-left">recommendation</th>
+                      <th className="px-3 py-2 text-left">recommended supplier</th>
+                      <th className="px-3 py-2 text-left">category_l1</th>
+                      <th className="px-3 py-2 text-left">category_l2</th>
+                      <th className="px-3 py-2 text-left">quantity</th>
+                      <th className="px-3 py-2 text-left">budget_amount</th>
+                      <th className="px-3 py-2 text-left">actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows
-                      .slice()
-                      .sort((a, b) => b.output_id - a.output_id)
-                      .map((r) => (
+                    {rows.map((r) => (
                         <tr
                           key={r.output_id}
                           className="border-t border-border hover:bg-muted/50 cursor-pointer"
@@ -112,19 +152,81 @@ export default function OutputsListPage() {
                           <td className="px-3 py-2 font-medium">{r.output_id}</td>
                           <td className="px-3 py-2">{r.request_id}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
-                            {r.processed_at}
+                            {formatDateTime(r.processed_at)}
                           </td>
                           <td className="px-3 py-2">
-                            {r.final_output?.recommendation?.status ?? "-"}
+                            <Badge variant="secondary">
+                              {r.final_output?.recommendation?.status ?? "-"}
+                            </Badge>
                           </td>
                           <td className="px-3 py-2">
                             {r.final_output?.recommendation?.recommended_supplier ?? "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {r.final_output?.request_interpretation?.category_l1 ?? "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {r.final_output?.request_interpretation?.category_l2 ?? "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {r.final_output?.request_interpretation?.quantity ?? "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {r.final_output?.request_interpretation?.budget_amount ?? "-"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/outputs/${r.output_id}`)
+                                }}
+                              >
+                                View
+                              </Button>
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    disabled={deletingOutputId === r.output_id}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete processed output?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will remove `output_id={r.output_id}` from `processed_outputs.json`.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDelete(r.output_id)
+                                      }}
+                                      className="gap-2"
+                                    >
+                                      {deletingOutputId === r.output_id ? "Deleting..." : "Delete"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     {rows.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
+                        <td colSpan={10} className="px-3 py-4 text-center text-muted-foreground">
                           No processed outputs found.
                         </td>
                       </tr>
