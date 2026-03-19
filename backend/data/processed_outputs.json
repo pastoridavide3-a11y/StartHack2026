@@ -1,0 +1,354 @@
+{
+  "outputs": [
+    {
+      "output_id": 1,
+      "request_id": "REQ-000001",
+      "processed_at": "2026-03-19T18:35:31.941699Z",
+      "final_output": {
+        "request_id": "REQ-000001",
+        "request_interpretation": {
+          "category_l1": "Professional Services",
+          "category_l2": "IT Project Management Services",
+          "quantity": 400,
+          "budget_amount": 400000,
+          "currency": "EUR",
+          "delivery_country": "ES",
+          "required_by_date": "2026-05-17",
+          "days_until_required": 32,
+          "preferred_supplier_stated": "Accenture Advisory Europe",
+          "incumbent_supplier": "Accenture Advisory Europe"
+        },
+        "validation": {
+          "completeness": "pass",
+          "issues_detected": [
+            {
+              "issue_id": "V-001",
+              "severity": "high",
+              "type": "budget_insufficient",
+              "description": "Supplier set contains blocking operational issue: budget_insufficient.",
+              "action_required": "Resolve or override issue: budget_insufficient."
+            }
+          ]
+        },
+        "policy_evaluation": {
+          "approval_threshold": {
+            "rule_applied": "AT-003",
+            "basis": null,
+            "quotes_required": null,
+            "approvers": null,
+            "deviation_approval": null,
+            "note": null
+          },
+          "preferred_supplier": {
+            "supplier": "Accenture Advisory Europe",
+            "status": "eligible",
+            "is_preferred": true,
+            "covers_delivery_country": true,
+            "is_restricted": false,
+            "policy_note": null
+          },
+          "restricted_suppliers": {
+            "SUP-0030_Accenture_Advisory_Europe": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            },
+            "SUP-0031_Capgemini_Consulting": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            }
+          },
+          "category_rules_applied": [],
+          "geography_rules_applied": []
+        },
+        "supplier_shortlist": [
+          {
+            "rank": 1,
+            "supplier_id": "SUP-0030",
+            "supplier_name": "Accenture Advisory Europe",
+            "score": 0.2864,
+            "unit_price": 1120.0,
+            "quality_score": 90,
+            "risk_score": 25,
+            "esg_score": 66,
+            "award_block": true
+          },
+          {
+            "rank": 2,
+            "supplier_id": "SUP-0031",
+            "supplier_name": "Capgemini Consulting",
+            "score": 0.2834,
+            "unit_price": 1030.0,
+            "quality_score": 86,
+            "risk_score": 22,
+            "esg_score": 69,
+            "award_block": true
+          }
+        ],
+        "suppliers_excluded": [
+          {
+            "supplier_id": "SUP-0033",
+            "supplier_name": "Deloitte Technology Advisory",
+            "reason": "country_coverage_mismatch",
+            "supplier": {
+              "supplier_id": "SUP-0033",
+              "supplier_name": "Deloitte Technology Advisory",
+              "category_l1": "Professional Services",
+              "category_l2": "IT Project Management Services",
+              "country_hq": "CH",
+              "service_regions": "CH;DE;FR;AT;IT",
+              "currency": "CHF",
+              "pricing_model": "day_rate",
+              "quality_score": 86,
+              "risk_score": 27,
+              "esg_score": 75,
+              "preferred_supplier": false,
+              "is_restricted": false,
+              "restriction_reason": NaN,
+              "contract_status": "active",
+              "data_residency_supported": true,
+              "capacity_per_month": 1500,
+              "notes": NaN
+            },
+            "selected_pricing_row": null
+          },
+          {
+            "supplier_id": "SUP-0039",
+            "supplier_name": "Infosys Consulting",
+            "reason": "country_coverage_mismatch",
+            "supplier": {
+              "supplier_id": "SUP-0039",
+              "supplier_name": "Infosys Consulting",
+              "category_l1": "Professional Services",
+              "category_l2": "IT Project Management Services",
+              "country_hq": "IN",
+              "service_regions": "US;CA;AU;SG;IN;JP;UAE;BR;MX;ZA",
+              "currency": "USD",
+              "pricing_model": "day_rate",
+              "quality_score": 84,
+              "risk_score": 19,
+              "esg_score": 76,
+              "preferred_supplier": false,
+              "is_restricted": false,
+              "restriction_reason": NaN,
+              "contract_status": "active",
+              "data_residency_supported": true,
+              "capacity_per_month": 4200,
+              "notes": NaN
+            },
+            "selected_pricing_row": null
+          }
+        ],
+        "escalations": [
+          {
+            "rule_id": "AT-003",
+            "trigger": "insufficient_comparison",
+            "action": "escalate",
+            "target": "Head of Category",
+            "blocking": true,
+            "supplier_id": null
+          }
+        ],
+        "recommendation": {
+          "status": "cannot_auto_award_but_options_exist",
+          "recommended_supplier": "Accenture Advisory Europe"
+        },
+        "audit_trail": {
+          "policies_checked": [
+            "AT-003",
+            "PS-SUP-0030-IT Project Management Services",
+            "PS-SUP-0031-IT Project Management Services"
+          ],
+          "supplier_ids_evaluated": [
+            "SUP-0030",
+            "SUP-0031",
+            "SUP-0033",
+            "SUP-0039"
+          ],
+          "pricing_tiers_applied": "180–9999 units (EU region, EUR currency)",
+          "data_sources_used": [
+            "suppliers.csv",
+            "pricing.csv",
+            "policies.json"
+          ],
+          "historical_awards_consulted": false,
+          "historical_award_note": null
+        }
+      }
+    },
+    {
+      "output_id": 2,
+      "request_id": "REQ-000001",
+      "processed_at": "2026-03-19T18:36:12.783481Z",
+      "final_output": {
+        "request_id": "REQ-000001",
+        "request_interpretation": {
+          "category_l1": "Professional Services",
+          "category_l2": "IT Project Management Services",
+          "quantity": 400,
+          "budget_amount": 400000,
+          "currency": "EUR",
+          "delivery_country": "ES",
+          "required_by_date": "2026-05-17",
+          "days_until_required": 32,
+          "preferred_supplier_stated": "Accenture Advisory Europe",
+          "incumbent_supplier": "Accenture Advisory Europe"
+        },
+        "validation": {
+          "completeness": "pass",
+          "issues_detected": [
+            {
+              "issue_id": "V-001",
+              "severity": "high",
+              "type": "budget_insufficient",
+              "description": "Supplier set contains blocking operational issue: budget_insufficient.",
+              "action_required": "Resolve or override issue: budget_insufficient."
+            }
+          ]
+        },
+        "policy_evaluation": {
+          "approval_threshold": {
+            "rule_applied": "AT-003",
+            "basis": null,
+            "quotes_required": null,
+            "approvers": null,
+            "deviation_approval": null,
+            "note": null
+          },
+          "preferred_supplier": {
+            "supplier": "Accenture Advisory Europe",
+            "status": "eligible",
+            "is_preferred": true,
+            "covers_delivery_country": true,
+            "is_restricted": false,
+            "policy_note": null
+          },
+          "restricted_suppliers": {
+            "SUP-0030_Accenture_Advisory_Europe": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            },
+            "SUP-0031_Capgemini_Consulting": {
+              "restricted": false,
+              "note": "Supplier evaluated in final candidate set."
+            }
+          },
+          "category_rules_applied": [],
+          "geography_rules_applied": []
+        },
+        "supplier_shortlist": [
+          {
+            "rank": 1,
+            "supplier_id": "SUP-0030",
+            "supplier_name": "Accenture Advisory Europe",
+            "score": 0.2864,
+            "unit_price": 1120.0,
+            "quality_score": 90,
+            "risk_score": 25,
+            "esg_score": 66,
+            "award_block": true
+          },
+          {
+            "rank": 2,
+            "supplier_id": "SUP-0031",
+            "supplier_name": "Capgemini Consulting",
+            "score": 0.2834,
+            "unit_price": 1030.0,
+            "quality_score": 86,
+            "risk_score": 22,
+            "esg_score": 69,
+            "award_block": true
+          }
+        ],
+        "suppliers_excluded": [
+          {
+            "supplier_id": "SUP-0033",
+            "supplier_name": "Deloitte Technology Advisory",
+            "reason": "country_coverage_mismatch",
+            "supplier": {
+              "supplier_id": "SUP-0033",
+              "supplier_name": "Deloitte Technology Advisory",
+              "category_l1": "Professional Services",
+              "category_l2": "IT Project Management Services",
+              "country_hq": "CH",
+              "service_regions": "CH;DE;FR;AT;IT",
+              "currency": "CHF",
+              "pricing_model": "day_rate",
+              "quality_score": 86,
+              "risk_score": 27,
+              "esg_score": 75,
+              "preferred_supplier": false,
+              "is_restricted": false,
+              "restriction_reason": NaN,
+              "contract_status": "active",
+              "data_residency_supported": true,
+              "capacity_per_month": 1500,
+              "notes": NaN
+            },
+            "selected_pricing_row": null
+          },
+          {
+            "supplier_id": "SUP-0039",
+            "supplier_name": "Infosys Consulting",
+            "reason": "country_coverage_mismatch",
+            "supplier": {
+              "supplier_id": "SUP-0039",
+              "supplier_name": "Infosys Consulting",
+              "category_l1": "Professional Services",
+              "category_l2": "IT Project Management Services",
+              "country_hq": "IN",
+              "service_regions": "US;CA;AU;SG;IN;JP;UAE;BR;MX;ZA",
+              "currency": "USD",
+              "pricing_model": "day_rate",
+              "quality_score": 84,
+              "risk_score": 19,
+              "esg_score": 76,
+              "preferred_supplier": false,
+              "is_restricted": false,
+              "restriction_reason": NaN,
+              "contract_status": "active",
+              "data_residency_supported": true,
+              "capacity_per_month": 4200,
+              "notes": NaN
+            },
+            "selected_pricing_row": null
+          }
+        ],
+        "escalations": [
+          {
+            "rule_id": "AT-003",
+            "trigger": "insufficient_comparison",
+            "action": "escalate",
+            "target": "Head of Category",
+            "blocking": true,
+            "supplier_id": null
+          }
+        ],
+        "recommendation": {
+          "status": "cannot_auto_award_but_options_exist",
+          "recommended_supplier": "Accenture Advisory Europe"
+        },
+        "audit_trail": {
+          "policies_checked": [
+            "AT-003",
+            "PS-SUP-0030-IT Project Management Services",
+            "PS-SUP-0031-IT Project Management Services"
+          ],
+          "supplier_ids_evaluated": [
+            "SUP-0030",
+            "SUP-0031",
+            "SUP-0033",
+            "SUP-0039"
+          ],
+          "pricing_tiers_applied": "180–9999 units (EU region, EUR currency)",
+          "data_sources_used": [
+            "suppliers.csv",
+            "pricing.csv",
+            "policies.json"
+          ],
+          "historical_awards_consulted": false,
+          "historical_award_note": null
+        }
+      }
+    }
+  ]
+}
