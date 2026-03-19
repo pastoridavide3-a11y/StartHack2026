@@ -384,13 +384,13 @@ export function RequestForm() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href="/requests-list">
+              <Link href="/requester/list-requests">
                 <Table2 className="h-4 w-4" />
                 View requests
               </Link>
             </Button>
             <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href="/process-request">
+              <Link href="/requester/list-requests">
                 <Play className="h-4 w-4" />
                 Process request
               </Link>
@@ -440,13 +440,13 @@ export function RequestForm() {
       <div className="p-8 max-w-3xl mx-auto">
         <div className="mb-4 flex justify-end gap-2">
           <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requests-list">
+            <Link href="/requester/list-requests">
               <Table2 className="h-4 w-4" />
               View requests
             </Link>
           </Button>
           <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/process-request">
+            <Link href="/requester/list-requests">
               <Play className="h-4 w-4" />
               Process request
             </Link>
@@ -512,13 +512,13 @@ export function RequestForm() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requests-list">
+            <Link href="/requester/list-requests">
               <Table2 className="h-4 w-4" />
               View requests
             </Link>
           </Button>
           <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/process-request">
+            <Link href="/requester/list-requests">
               <Play className="h-4 w-4" />
               Process request
             </Link>
