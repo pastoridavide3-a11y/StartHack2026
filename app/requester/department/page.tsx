@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
-export default function ProcessRequestPage() {
+export default function RequesterDepartmentPage() {
   redirect("/requester/list-requests")
 }
+

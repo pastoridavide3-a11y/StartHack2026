@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
-export default function ReviewerPage() {
+export default function ReviewerListPage() {
   redirect("/reviewer/dashboard")
 }
+

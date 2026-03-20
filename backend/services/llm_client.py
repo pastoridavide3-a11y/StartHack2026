@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from backend.llm_extraction import build_groq_model_from_env
+
 
 _MODEL: Any | None = None
 
@@ -18,29 +20,16 @@ def get_llm_model() -> Any:
   if _MODEL is not None:
     return _MODEL
 
-  api_key = os.getenv("GOOGLE_API_KEY")
-  if not api_key:
-    # Minimal fallback: reuse the hardcoded model from backend/llm_extraction.py.
-    # This keeps /extract working even without env configuration.
+  try:
+    # Prefer explicit env-backed Groq model.
+    _MODEL = build_groq_model_from_env()
+    return _MODEL
+  except Exception as e:
+    # Fallback to module-level model (already initialized in llm_extraction.py).
     try:
       from backend.llm_extraction import model as llm_model  # type: ignore
-
-      return llm_model
+      _MODEL = llm_model
+      return _MODEL
     except Exception:
-      raise RuntimeError(
-        "Missing GOOGLE_API_KEY and unable to import backend.llm_extraction.model."
-      )
-
-  model_name = os.getenv("GOOGLE_MODEL_NAME", "gemini-1.5-flash")
-
-  try:
-    import google.generativeai as genai  # type: ignore
-  except Exception as e:
-    raise RuntimeError(
-      "Missing dependency 'google-generativeai'. Install backend requirements."
-    ) from e
-
-  genai.configure(api_key=api_key)
-  _MODEL = genai.GenerativeModel(model_name)
-  return _MODEL
+      raise RuntimeError("Unable to initialize Groq LLM model.") from e
 

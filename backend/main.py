@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Optional
 
-import google.generativeai as genai
 import re
 
 import pandas as pd
@@ -118,8 +117,7 @@ def save_output(output: dict, output_path: Path):
         json.dump(output, f, indent=2, ensure_ascii=False)
 
 
-genai.configure(api_key="AIzaSyDnroepjvpymLtr5OCsZ9YJECXKLwvc0gE")
-model = genai.GenerativeModel("gemini-flash-latest")
+model = None
 
 if __name__ == "__main__":
     REQUEST_ID = "REQ-000002"
