@@ -47,18 +47,13 @@ export interface HistoricalRequest {
   scenario_tags: string[]
 }
 
-interface ProcessResultPayload {
-  request_id: string
-  output_id: number
-  result: unknown
-}
-
 interface RequestProcessingWorkspaceProps {
   requests: HistoricalRequest[]
   emptyMessage?: string
-  onProcessed?: (payload: ProcessResultPayload) => void
+  onProcessed?: () => void
   compact?: boolean
   tableMaxHeightClassName?: string
+  flatLayout?: boolean
 }
 
 function parseRequestIdToNumber(requestId: string): number | null {
@@ -72,6 +67,7 @@ export function RequestProcessingWorkspace({
   onProcessed,
   compact = false,
   tableMaxHeightClassName,
+  flatLayout = false,
 }: RequestProcessingWorkspaceProps) {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [idFilter, setIdFilter] = useState<string>("")
@@ -82,7 +78,7 @@ export function RequestProcessingWorkspace({
   const [selectedRequest, setSelectedRequest] = useState<HistoricalRequest | null>(null)
   const [processing, setProcessing] = useState(false)
   const [processError, setProcessError] = useState<string | null>(null)
-  const [processResult, setProcessResult] = useState<ProcessResultPayload | null>(null)
+  const [processResultMessage, setProcessResultMessage] = useState<string | null>(null)
 
   // If the selected item disappears from the list (e.g. moved to processed), clear selection.
   useEffect(() => {
@@ -127,7 +123,8 @@ export function RequestProcessingWorkspace({
     if (!selectedRequest) return
     setProcessing(true)
     setProcessError(null)
-    setProcessResult(null)
+    setProcessResultMessage(null)
+
     try {
       const res = await fetch(`${BACKEND_BASE_URL}/process-request`, {
         method: "POST",
@@ -145,9 +142,9 @@ export function RequestProcessingWorkspace({
         }
         throw new Error(detail || `Request failed (${res.status})`)
       }
-      const data = (await res.json()) as ProcessResultPayload
-      setProcessResult(data)
-      onProcessed?.(data)
+      const data = (await res.json()) as { request_id: string; output_id: number }
+      setProcessResultMessage(`Processed successfully. Request: ${data.request_id}, Output ID: ${data.output_id}`)
+      onProcessed?.()
     } catch (e) {
       setProcessError(e instanceof Error ? e.message : "Processing failed")
     } finally {
@@ -156,118 +153,241 @@ export function RequestProcessingWorkspace({
   }
 
   return (
-    <div className={cn("space-y-4", compact && "space-y-3")}>
-      <div className="flex items-center justify-between gap-4">
-        <div className={cn("text-sm text-muted-foreground", compact && "text-xs")}>
-          Select a request row and click Process.
-        </div>
-        <Button
-          onClick={handleProcess}
-          disabled={!selectedRequest || processing}
-          className="gap-2"
-          size={compact ? "sm" : "default"}
-        >
-          <Play className="h-4 w-4" />
-          {processing ? "Processing..." : "Process"}
-        </Button>
-      </div>
-
-      <Card className="border-border bg-card">
-        <CardHeader className={cn(compact && "pb-3")}>
-          <CardTitle className="text-base">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className={cn("space-y-4", compact && "space-y-3")}>
-          {processError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {processError}
-            </div>
-          )}
-          {processResult && (
-            <div className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400">
-              Processed successfully. Request: {processResult.request_id}, Output ID:{" "}
-              {processResult.output_id}
-            </div>
-          )}
-          <div className={cn("grid grid-cols-1 md:grid-cols-5 gap-4", compact && "gap-3")}>
-            <div>
-              <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                Search by ID
-              </label>
-              <Input
-                placeholder="e.g. REQ-000001 or 1"
-                value={idFilter}
-                onChange={(e) => setIdFilter(e.target.value)}
-                className={cn("bg-input border-border text-foreground", compact && "h-8 text-xs")}
-              />
-            </div>
-            <div>
-              <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                Category
-              </label>
-              <Select value={categoryFilter ?? undefined} onValueChange={setCategoryFilter}>
-                <SelectTrigger className={cn("w-full bg-input border-border text-foreground", compact && "h-8 text-xs")}>
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="IT">IT</SelectItem>
-                  <SelectItem value="Facilities">Facilities</SelectItem>
-                  <SelectItem value="Professional Services">Professional Services</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                Required by from
-              </label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className={cn("bg-input border-border text-foreground", compact && "h-8 text-xs")}
-              />
-            </div>
-            <div>
-              <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                Required by to
-              </label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className={cn("bg-input border-border text-foreground", compact && "h-8 text-xs")}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+    <div className={cn("space-y-4", compact && "space-y-2.5")}>
+      {flatLayout ? (
+        <div className={cn("space-y-2.5", compact && "space-y-2")}>
+          <div className="flex flex-row items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+            <Button
+              onClick={handleProcess}
+              disabled={!selectedRequest || processing}
+              className={cn("gap-2", compact && "h-8 px-3 text-xs")}
+              size={compact ? "sm" : "default"}
+            >
+              <Play className="h-4 w-4" />
+              {processing ? "Processing..." : "Process"}
+            </Button>
+          </div>
+          <div className={cn("space-y-3", compact && "space-y-2")}>
+            {processError && (
+              <div
+                className={cn(
+                  "rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive",
+                  compact && "px-3 py-2 text-xs"
+                )}
+              >
+                {processError}
+              </div>
+            )}
+            {processResultMessage && (
+              <div
+                className={cn(
+                  "rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400",
+                  compact && "px-3 py-2 text-xs"
+                )}
+              >
+                {processResultMessage}
+              </div>
+            )}
+            <div className={cn("grid grid-cols-1 md:grid-cols-5 gap-3", compact && "gap-2")}>
               <div>
-                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                  Budget min
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Search by ID
                 </label>
                 <Input
-                  type="number"
-                  value={budgetMin}
-                  onChange={(e) => setBudgetMin(e.target.value)}
-                  className={cn("bg-input border-border text-foreground", compact && "h-8 text-xs")}
+                  placeholder="e.g. REQ-000001 or 1"
+                  value={idFilter}
+                  onChange={(e) => setIdFilter(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
                 />
               </div>
               <div>
-                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-xs mb-0.5")}>
-                  Budget max
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Category
+                </label>
+                <Select value={categoryFilter ?? undefined} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className={cn("w-full bg-input border-border text-foreground", compact && "h-7 text-xs")}>
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Facilities">Facilities</SelectItem>
+                    <SelectItem value="Professional Services">Professional Services</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Required by from
                 </label>
                 <Input
-                  type="number"
-                  value={budgetMax}
-                  onChange={(e) => setBudgetMax(e.target.value)}
-                  className={cn("bg-input border-border text-foreground", compact && "h-8 text-xs")}
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
                 />
+              </div>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Required by to
+                </label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                />
+              </div>
+              <div className={cn("grid grid-cols-2 gap-2", compact && "gap-1.5")}>
+                <div>
+                  <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                    Budget min
+                  </label>
+                  <Input
+                    type="number"
+                    value={budgetMin}
+                    onChange={(e) => setBudgetMin(e.target.value)}
+                    className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                  />
+                </div>
+                <div>
+                  <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                    Budget max
+                  </label>
+                  <Input
+                    type="number"
+                    value={budgetMax}
+                    onChange={(e) => setBudgetMax(e.target.value)}
+                    className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      ) : (
+        <Card className="border-border bg-card">
+          <CardHeader
+            className={cn(
+              "flex flex-row items-center justify-between gap-3",
+              compact ? "px-4 py-3 pb-1.5" : "pb-3"
+            )}
+          >
+            <CardTitle className="text-base">Filters</CardTitle>
+            <Button
+              onClick={handleProcess}
+              disabled={!selectedRequest || processing}
+              className={cn("gap-2", compact && "h-8 px-3 text-xs")}
+              size={compact ? "sm" : "default"}
+            >
+              <Play className="h-4 w-4" />
+              {processing ? "Processing..." : "Process"}
+            </Button>
+          </CardHeader>
+          <CardContent className={cn("space-y-3", compact && "px-4 pt-1.5 pb-3 space-y-2")}>
+            {processError && (
+              <div
+                className={cn(
+                  "rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive",
+                  compact && "px-3 py-2 text-xs"
+                )}
+              >
+                {processError}
+              </div>
+            )}
+            {processResultMessage && (
+              <div
+                className={cn(
+                  "rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400",
+                  compact && "px-3 py-2 text-xs"
+                )}
+              >
+                {processResultMessage}
+              </div>
+            )}
+            <div className={cn("grid grid-cols-1 md:grid-cols-5 gap-3", compact && "gap-2")}>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Search by ID
+                </label>
+                <Input
+                  placeholder="e.g. REQ-000001 or 1"
+                  value={idFilter}
+                  onChange={(e) => setIdFilter(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                />
+              </div>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Category
+                </label>
+                <Select value={categoryFilter ?? undefined} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className={cn("w-full bg-input border-border text-foreground", compact && "h-7 text-xs")}>
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Facilities">Facilities</SelectItem>
+                    <SelectItem value="Professional Services">Professional Services</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Required by from
+                </label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                />
+              </div>
+              <div>
+                <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                  Required by to
+                </label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                />
+              </div>
+              <div className={cn("grid grid-cols-2 gap-2", compact && "gap-1.5")}>
+                <div>
+                  <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                    Budget min
+                  </label>
+                  <Input
+                    type="number"
+                    value={budgetMin}
+                    onChange={(e) => setBudgetMin(e.target.value)}
+                    className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                  />
+                </div>
+                <div>
+                  <label className={cn("block text-sm font-medium text-foreground mb-1", compact && "text-[11px] mb-0.5")}>
+                    Budget max
+                  </label>
+                  <Input
+                    type="number"
+                    value={budgetMax}
+                    onChange={(e) => setBudgetMax(e.target.value)}
+                    className={cn("bg-input border-border text-foreground", compact && "h-7 text-xs")}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className={cn("text-sm text-muted-foreground", compact && "text-xs")}>
+      <div className={cn("text-sm text-muted-foreground", compact && "text-[11px]")}>
         Selected:{" "}
         {selectedRequest ? (
           <span className="font-medium text-foreground">{selectedRequest.request_id}</span>
@@ -283,25 +403,25 @@ export function RequestProcessingWorkspace({
           tableMaxHeightClassName
         )}
       >
-        <table className="min-w-full text-xs md:text-sm">
+        <table className={cn("min-w-full text-xs md:text-sm", compact && "text-[11px] md:text-xs")}>
           <thead className="bg-muted sticky top-0">
             <tr>
-              <th className="px-3 py-2 text-left w-10"></th>
-              <th className="px-3 py-2 text-left">Request ID</th>
-              <th className="px-3 py-2 text-left">Created</th>
-              <th className="px-3 py-2 text-left">Category L1</th>
-              <th className="px-3 py-2 text-left">Category L2</th>
-              <th className="px-3 py-2 text-left">Request text</th>
-              <th className="px-3 py-2 text-left">Currency</th>
-              <th className="px-3 py-2 text-right">Budget</th>
-              <th className="px-3 py-2 text-right">Qty</th>
-              <th className="px-3 py-2 text-left">Unit</th>
-              <th className="px-3 py-2 text-left">Required by</th>
-              <th className="px-3 py-2 text-left">Supplier</th>
-              <th className="px-3 py-2 text-left">Countries</th>
-              <th className="px-3 py-2 text-left">Residency</th>
-              <th className="px-3 py-2 text-left">ESG</th>
-              <th className="px-3 py-2 text-left">Status</th>
+              <th className={cn("px-3 py-2 text-left w-10", compact && "px-2 py-1.5 w-8")}></th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Request ID</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Created</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Category L1</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Category L2</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Request text</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Currency</th>
+              <th className={cn("px-3 py-2 text-right", compact && "px-2 py-1.5")}>Budget</th>
+              <th className={cn("px-3 py-2 text-right", compact && "px-2 py-1.5")}>Qty</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Unit</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Required by</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Supplier</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Countries</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Residency</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>ESG</th>
+              <th className={cn("px-3 py-2 text-left", compact && "px-2 py-1.5")}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -316,43 +436,44 @@ export function RequestProcessingWorkspace({
                     isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-muted/50"
                   )}
                 >
-                  <td className="px-3 py-2">
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>
                     <div
                       className={cn(
                         "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                        compact && "w-3.5 h-3.5 border",
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                       )}
                     >
-                      {isSelected && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
+                      {isSelected && <div className={cn("w-2 h-2 rounded-full bg-primary-foreground", compact && "w-1.5 h-1.5")} />}
                     </div>
                   </td>
-                  <td className="px-3 py-2 font-medium">{r.request_id}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{r.created_at}</td>
-                  <td className="px-3 py-2">{r.category_l1}</td>
-                  <td className="px-3 py-2">{r.category_l2}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={r.request_text}>
+                  <td className={cn("px-3 py-2 font-medium", compact && "px-2 py-1.5")}>{r.request_id}</td>
+                  <td className={cn("px-3 py-2 whitespace-nowrap", compact && "px-2 py-1.5")}>{r.created_at}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.category_l1}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.category_l2}</td>
+                  <td className={cn("px-3 py-2 max-w-xs truncate", compact && "px-2 py-1.5 max-w-[12rem]")} title={r.request_text}>
                     {r.request_text}
                   </td>
-                  <td className="px-3 py-2">{r.currency}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.currency}</td>
+                  <td className={cn("px-3 py-2 text-right", compact && "px-2 py-1.5")}>
                     {r.budget_amount != null ? r.budget_amount.toLocaleString() : "-"}
                   </td>
-                  <td className="px-3 py-2 text-right">{r.quantity != null ? r.quantity : "-"}</td>
-                  <td className="px-3 py-2">{r.unit_of_measure ?? "-"}</td>
-                  <td className="px-3 py-2">{r.required_by_date ?? "-"}</td>
-                  <td className="px-3 py-2">{r.preferred_supplier_mentioned ?? "-"}</td>
-                  <td className="px-3 py-2">
+                  <td className={cn("px-3 py-2 text-right", compact && "px-2 py-1.5")}>{r.quantity != null ? r.quantity : "-"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.unit_of_measure ?? "-"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.required_by_date ?? "-"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.preferred_supplier_mentioned ?? "-"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>
                     {r.delivery_countries?.length ? r.delivery_countries.join(", ") : "-"}
                   </td>
-                  <td className="px-3 py-2">{r.data_residency_constraint ? "Yes" : "No"}</td>
-                  <td className="px-3 py-2">{r.esg_requirement ? "Yes" : "No"}</td>
-                  <td className="px-3 py-2">{r.status}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.data_residency_constraint ? "Yes" : "No"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.esg_requirement ? "Yes" : "No"}</td>
+                  <td className={cn("px-3 py-2", compact && "px-2 py-1.5")}>{r.status}</td>
                 </tr>
               )
             })}
             {filteredRequests.length === 0 && (
               <tr>
-                <td colSpan={16} className="px-3 py-4 text-center text-muted-foreground">
+                <td colSpan={16} className={cn("px-3 py-4 text-center text-muted-foreground", compact && "py-3 text-xs")}>
                   {emptyMessage}
                 </td>
               </tr>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Plus } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { AppShell } from "@/components/app-shell"
 import { Button } from "@/components/ui/button"
@@ -81,20 +81,12 @@ export default function RequesterListRequestsPage() {
 
   return (
     <AppShell>
-      <div className="p-8 max-w-full mx-auto space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">Requester · List Requests</h2>
-            <p className="text-muted-foreground mt-1">
-              Overview dashboard for request processing status.
-            </p>
-          </div>
-          <Button className="gap-2" asChild>
-            <Link href="/requester/add-request">
-              <Plus className="h-4 w-4" />
-              Add request
-            </Link>
-          </Button>
+      <div className="mx-auto max-w-7xl p-6 lg:p-8 space-y-8">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Requester · List Requests</h2>
+          <p className="text-muted-foreground mt-1">
+            Overview dashboard for request processing status.
+          </p>
         </div>
 
         {loadError && (
@@ -103,9 +95,9 @@ export default function RequesterListRequestsPage() {
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Requests to process preview */}
-          <Card className="border-border bg-card">
+          <Card className="border-border/80 bg-card/95">
             <CardHeader className="border-b border-border/60">
               <Link
                 href="/requester/list-requests/to-process"
@@ -125,27 +117,26 @@ export default function RequesterListRequestsPage() {
                 </div>
               </Link>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-4">
               {loading ? (
                 <div className="text-sm text-muted-foreground">Loading...</div>
               ) : (
-                <div className="border border-border rounded-md p-3">
-                  <RequestProcessingWorkspace
-                    requests={unprocessedRequests}
-                    emptyMessage="No requests left to process."
-                    compact
-                    tableMaxHeightClassName="max-h-[220px]"
-                    onProcessed={() => {
-                      void loadData()
-                    }}
-                  />
-                </div>
+                <RequestProcessingWorkspace
+                  requests={unprocessedRequests}
+                  emptyMessage="No requests left to process."
+                  compact
+                  flatLayout
+                  tableMaxHeightClassName="max-h-[310px]"
+                  onProcessed={() => {
+                    void loadData()
+                  }}
+                />
               )}
             </CardContent>
           </Card>
 
           {/* Processed requests preview */}
-          <Card className="border-border bg-card">
+          <Card className="border-border/80 bg-card/95">
             <CardHeader className="border-b border-border/60">
               <Link
                 href="/requester/list-requests/processed"
@@ -165,52 +156,52 @@ export default function RequesterListRequestsPage() {
                 </div>
               </Link>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-4">
               {loading ? (
                 <div className="text-sm text-muted-foreground">Loading...</div>
               ) : (
-                <div className="h-[360px] border border-border rounded-md overflow-auto">
-                  <table className="min-w-full text-xs md:text-sm">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Request ID</th>
-                        <th className="px-3 py-2 text-left">Output ID</th>
-                        <th className="px-3 py-2 text-left">Processed at</th>
-                        <th className="px-3 py-2 text-left">Recommendation</th>
-                        <th className="px-3 py-2 text-left">Category L1</th>
-                        <th className="px-3 py-2 text-left">Category L2</th>
-                        <th className="px-3 py-2 text-right">Budget</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {processedRequests.map((r) => {
-                        const out = latestProcessedByRequestId.get(r.request_id)
-                        return (
-                          <tr key={r.request_id} className="border-t border-border">
-                            <td className="px-3 py-2 font-medium">{r.request_id}</td>
-                            <td className="px-3 py-2">{out?.output_id ?? "-"}</td>
-                            <td className="px-3 py-2 whitespace-nowrap">{out?.processed_at ?? "-"}</td>
-                            <td className="px-3 py-2">
-                              {out?.final_output?.recommendation?.status ?? "-"}
-                            </td>
-                            <td className="px-3 py-2">{r.category_l1 ?? "-"}</td>
-                            <td className="px-3 py-2">{r.category_l2 ?? "-"}</td>
-                            <td className="px-3 py-2 text-right">
-                              {r.budget_amount != null ? r.budget_amount.toLocaleString() : "-"}
+                  <div className="h-[250px] overflow-auto rounded-md">
+                    <table className="min-w-full text-xs md:text-sm">
+                      <thead className="bg-muted/80 sticky top-0">
+                        <tr>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Request ID</th>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Output ID</th>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Processed at</th>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Recommendation</th>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Category L1</th>
+                          <th className="px-2.5 py-1.5 text-left text-xs font-semibold text-foreground/90">Category L2</th>
+                          <th className="px-2.5 py-1.5 text-right text-xs font-semibold text-foreground/90">Budget</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processedRequests.map((r, idx) => {
+                          const out = latestProcessedByRequestId.get(r.request_id)
+                          return (
+                            <tr key={r.request_id} className={`border-t border-border/60 ${idx % 2 === 0 ? "bg-card/40" : "bg-muted/10"}`}>
+                              <td className="px-2.5 py-1.5 font-medium">{r.request_id}</td>
+                              <td className="px-2.5 py-1.5">{out?.output_id ?? "-"}</td>
+                              <td className="px-2.5 py-1.5 whitespace-nowrap">{out?.processed_at ?? "-"}</td>
+                              <td className="px-2.5 py-1.5">
+                                {out?.final_output?.recommendation?.status ?? "-"}
+                              </td>
+                              <td className="px-2.5 py-1.5">{r.category_l1 ?? "-"}</td>
+                              <td className="px-2.5 py-1.5">{r.category_l2 ?? "-"}</td>
+                              <td className="px-2.5 py-1.5 text-right">
+                                {r.budget_amount != null ? r.budget_amount.toLocaleString() : "-"}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {processedRequests.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-2.5 py-4 text-center text-muted-foreground">
+                              No processed requests yet.
                             </td>
                           </tr>
-                        )
-                      })}
-                      {processedRequests.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">
-                            No processed requests yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
               )}
             </CardContent>
           </Card>
