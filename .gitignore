@@ -14,5 +14,10 @@ next.user-config.*
 # Common ignores
 node_modules/
 .next/
-.DS_Store__pycache__/
+.DS_Store
+__pycache__/
 *.pyc
+
+# Environment files (never commit secrets)
+.env
+.env.*
