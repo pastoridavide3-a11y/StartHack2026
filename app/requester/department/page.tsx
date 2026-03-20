@@ -1,14 +1,6 @@
-import { AppShell } from "@/components/app-shell"
-import { PlaceholderPage } from "@/components/placeholder-page"
+import { redirect } from "next/navigation"
 
 export default function RequesterDepartmentPage() {
-  return (
-    <AppShell>
-      <PlaceholderPage
-        title="Requester · Department"
-        description="Department-specific requester workspace."
-      />
-    </AppShell>
-  )
+  redirect("/requester/list-requests")
 }
 

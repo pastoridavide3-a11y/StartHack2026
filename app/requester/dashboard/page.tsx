@@ -1,11 +1,6 @@
-import { AppShell } from "@/components/app-shell"
-import { RequestForm } from "@/components/request-form"
+import { redirect } from "next/navigation"
 
 export default function RequesterDashboardPage() {
-  return (
-    <AppShell>
-      <RequestForm />
-    </AppShell>
-  )
+  redirect("/requester/add-request")
 }
 

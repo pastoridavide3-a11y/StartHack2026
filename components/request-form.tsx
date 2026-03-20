@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -13,8 +13,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import Link from "next/link"
-import { ArrowLeft, Check, FileText, Play, Table2 } from "lucide-react"
+import { ArrowLeft, Check, Upload } from "lucide-react"
 
 type Step = "input" | "review" | "success"
 
@@ -214,6 +213,121 @@ function frontendParsedFieldsToBackendParsed(parsed: ExtractedFields): Record<st
   }
 }
 
+function parseBooleanLike(value: unknown, fallback = false): boolean {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value !== 0
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (["true", "1", "yes", "y"].includes(normalized)) return true
+    if (["false", "0", "no", "n"].includes(normalized)) return false
+  }
+  return fallback
+}
+
+function firstDefined(source: Record<string, unknown>, keys: string[]): unknown {
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null) return source[key]
+  }
+  return undefined
+}
+
+function toOptionalString(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value)
+  }
+  return null
+}
+
+function toOptionalNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && isValidNonNegativeNumberString(value)) {
+    return Number(value.trim())
+  }
+  return null
+}
+
+function normalizeDeliveryCountries(value: unknown): string[] | null {
+  if (Array.isArray(value)) {
+    const countries = value
+      .map((entry) => toOptionalString(entry))
+      .filter((entry): entry is string => Boolean(entry))
+    return countries.length > 0 ? countries : null
+  }
+
+  const asString = toOptionalString(value)
+  if (!asString) return null
+
+  const countries = asString
+    .split(/[;,]/g)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+
+  return countries.length > 0 ? countries : [asString]
+}
+
+function buildCreatePayloadFromUploadedJson(raw: unknown): {
+  request_text: string
+  extracted: Record<string, unknown>
+  parsed: Record<string, unknown>
+  issues: unknown[]
+} {
+  const rootObject =
+    Array.isArray(raw) && raw.length > 0
+      ? raw[0]
+      : raw
+
+  if (!rootObject || typeof rootObject !== "object") {
+    throw new Error("Uploaded JSON must contain an object or a non-empty array of objects.")
+  }
+
+  const root = rootObject as Record<string, unknown>
+  const parsedSource =
+    root.parsed && typeof root.parsed === "object" ? (root.parsed as Record<string, unknown>) : root
+
+  const requestText =
+    toOptionalString(firstDefined(root, ["request_text", "requestText"])) ??
+    toOptionalString(firstDefined(parsedSource, ["request_text", "requestText", "text"])) ??
+    ""
+
+  const parsed = {
+    business_unit: toOptionalString(firstDefined(parsedSource, ["business_unit", "businessUnit"])),
+    category_l1: toOptionalString(firstDefined(parsedSource, ["category_l1", "categoryL1"])),
+    category_l2: toOptionalString(firstDefined(parsedSource, ["category_l2", "categoryL2"])),
+    quantity: toOptionalNumber(firstDefined(parsedSource, ["quantity"])),
+    unit_of_measure: toOptionalString(firstDefined(parsedSource, ["unit_of_measure", "unit", "unitOfMeasure"])),
+    budget_amount: toOptionalNumber(firstDefined(parsedSource, ["budget_amount", "budget", "budgetAmount"])),
+    currency: toOptionalString(firstDefined(parsedSource, ["currency"])),
+    delivery_countries: normalizeDeliveryCountries(
+      firstDefined(parsedSource, ["delivery_countries", "deliveryCountries", "delivery_country", "deliveryCountry", "country"])
+    ),
+    required_by_date: toOptionalString(firstDefined(parsedSource, ["required_by_date", "requiredByDate", "requiredBy"])),
+    preferred_supplier_mentioned: toOptionalString(
+      firstDefined(parsedSource, ["preferred_supplier_mentioned", "preferredSupplierMentioned", "preferred_supplier", "preferredSupplier"])
+    ),
+    data_residency_constraint: parseBooleanLike(
+      firstDefined(parsedSource, ["data_residency_constraint", "dataResidencyConstraint"]),
+      false
+    ),
+    esg_requirement: parseBooleanLike(firstDefined(parsedSource, ["esg_requirement", "esgRequirement"]), false),
+  }
+
+  const extracted =
+    root.extracted && typeof root.extracted === "object" ? (root.extracted as Record<string, unknown>) : {}
+
+  const issues = Array.isArray(root.issues) ? root.issues : []
+
+  return {
+    request_text: requestText,
+    extracted,
+    parsed,
+    issues,
+  }
+}
+
 export function RequestForm() {
   const [step, setStep] = useState<Step>("input")
   const [requestText, setRequestText] = useState("")
@@ -243,6 +357,70 @@ export function RequestForm() {
 
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const isJsonFile = (file: File): boolean => {
+    const nameOk = file.name.toLowerCase().endsWith(".json")
+    const type = (file.type || "").toLowerCase()
+    const typeOk =
+      type === "" ||
+      type === "application/json" ||
+      type === "text/json" ||
+      type === "application/ld+json" ||
+      type === "application/x-json"
+    return nameOk || typeOk
+  }
+
+  const validateJsonUpload = async (file: File) => {
+    setUploadError(null)
+    setUploadMessage(null)
+    setUploadedFileName(null)
+
+    if (!isJsonFile(file)) {
+      setUploadError("Invalid file type. Please upload a JSON file.")
+      return
+    }
+
+    try {
+      const text = await file.text()
+      const parsedJson = JSON.parse(text)
+      const payload = buildCreatePayloadFromUploadedJson(parsedJson)
+      const res = await fetch(`${BACKEND_BASE_URL}/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const body = await res.text().catch(() => "")
+        throw new Error(`Failed to import JSON request (${res.status}) ${body}`.trim())
+      }
+      const created = (await res.json()) as { request_id?: string }
+      setUploadedFileName(file.name)
+      const createdId = created?.request_id ? ` (${created.request_id})` : ""
+      setUploadMessage(`JSON imported into requests.json${createdId}`)
+    } catch {
+      setUploadError("Upload failed. Ensure the file is valid JSON and follows request structure.")
+    }
+  }
+
+  const handleFileInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    await validateJsonUpload(file)
+    event.target.value = ""
+  }
+
+  const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(false)
+    const file = event.dataTransfer.files?.[0]
+    if (!file) return
+    await validateJsonUpload(file)
+  }
 
   const handleSubmit = () => {
     void (async () => {
@@ -375,36 +553,16 @@ export function RequestForm() {
   if (step === "input") {
     return (
       <div className="p-8 max-w-3xl mx-auto">
-        <div className="mb-8 flex items-start justify-between gap-4">
+        <div className="mb-8">
           <div>
             <h2 className="text-2xl font-semibold text-foreground">New Request</h2>
             <p className="text-muted-foreground mt-1">
               Describe your request in plain language. We&apos;ll extract the details for you.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href="/requester/list-requests">
-                <Table2 className="h-4 w-4" />
-                View requests
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href="/requester/list-requests">
-                <Play className="h-4 w-4" />
-                Process request
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2" asChild>
-              <Link href="/outputs">
-                <FileText className="h-4 w-4" />
-                Processed outputs
-              </Link>
-            </Button>
-          </div>
         </div>
 
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card mb-6">
           <CardContent className="pt-6">
             <Textarea
               placeholder="Need laptops for the new team in Germany, delivery in 2 weeks, budget not yet confirmed, preferred supplier if available."
@@ -431,6 +589,66 @@ export function RequestForm() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-base">Upload request JSON</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Drag and drop a JSON file, or click to choose one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setIsDragOver(false)
+              }}
+              onDrop={(e) => {
+                void handleDrop(e)
+              }}
+              className={`rounded-lg border-2 border-dashed px-6 py-8 text-center transition-colors cursor-pointer ${
+                isDragOver
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-muted/20 hover:bg-muted/30"
+              }`}
+            >
+              <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+              <p className="mt-2 text-sm font-medium text-foreground">Drop JSON here or click to upload</p>
+              <p className="mt-1 text-xs text-muted-foreground">Only .json files are accepted</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json,text/json"
+                className="hidden"
+                onChange={(e) => {
+                  void handleFileInputChange(e)
+                }}
+              />
+            </div>
+            {uploadMessage && (
+              <p className="mt-3 text-sm text-green-600 dark:text-green-400">{uploadMessage}</p>
+            )}
+            {uploadError && (
+              <p className="mt-3 text-sm text-destructive">{uploadError}</p>
+            )}
+            {uploadedFileName && (
+              <p className="mt-1 text-xs text-muted-foreground">Selected file: {uploadedFileName}</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -438,26 +656,6 @@ export function RequestForm() {
   if (step === "success") {
     return (
       <div className="p-8 max-w-3xl mx-auto">
-        <div className="mb-4 flex justify-end gap-2">
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requester/list-requests">
-              <Table2 className="h-4 w-4" />
-              View requests
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requester/list-requests">
-              <Play className="h-4 w-4" />
-              Process request
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/outputs">
-              <FileText className="h-4 w-4" />
-              Processed outputs
-            </Link>
-          </Button>
-        </div>
         <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-xl">Request successfully submitted</CardTitle>
@@ -503,32 +701,12 @@ export function RequestForm() {
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Review Extracted Details</h2>
           <p className="text-muted-foreground mt-1">
             We extracted these details from your request. Please confirm or edit any field before continuing.
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requester/list-requests">
-              <Table2 className="h-4 w-4" />
-              View requests
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/requester/list-requests">
-              <Play className="h-4 w-4" />
-              Process request
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" asChild>
-            <Link href="/outputs">
-              <FileText className="h-4 w-4" />
-              Processed outputs
-            </Link>
-          </Button>
         </div>
       </div>
 

@@ -1,13 +1,10 @@
 import { AppShell } from "@/components/app-shell"
-import { PlaceholderPage } from "@/components/placeholder-page"
+import { RequestForm } from "@/components/request-form"
 
 export default function RequesterAddRequestPage() {
   return (
     <AppShell>
-      <PlaceholderPage
-        title="Requester · Add request"
-        description="Placeholder for future request creation flow."
-      />
+      <RequestForm />
     </AppShell>
   )
 }
