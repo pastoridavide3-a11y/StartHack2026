@@ -1,4 +1,4 @@
-# Request Portal
+# Decision Intelligence System for Procurement – StartHack Project 
 
 A **data-driven procurement** playground: corporate requests, a supplier catalog, policy rules, and pipeline outputs stored as local files. The focus is on **realistic datasets** (requests, suppliers, pricing, policies) and **extractors** that turn free text into structured fields you can compare with manually entered data.
 
